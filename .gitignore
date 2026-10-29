@@ -1,0 +1,7 @@
+node_modules/
+# Written by the bridge on every start: a per-run local shared secret.
+cookie-extension/bridge-config.json
+# Runtime Chrome profile for the project-scoped chrome-devtools MCP server.
+.profiles/
+# Generated per machine by scripts/mcp-install.mjs (absolute paths inside).
+.qoder/.mcp.json

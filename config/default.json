@@ -1,0 +1,40 @@
+{
+  "port": 9222,
+  "capture": {
+    "enabled": false,
+    "note": "取 cookie / localStorage 的总开关，默认关闭。关闭时 broker 不读取你浏览器里的任何东西：不连扩展桥、不直读磁盘上的 Chrome 库、不连 9222，agent 浏览器以匿名身份启动，restore 与 writeback 自动跳过。要借用登录态把它设为 true，或 runTask(..., {config:{capture:{enabled:true}}})。"
+  },
+  "cdp": {
+    "enabled": false,
+    "port": 9333,
+    "note": "给 agent 浏览器开 --remote-debugging-port 的开关，默认关闭（不对外暴露任何 CDP 端点）。打开后 chrome-devtools-mcp 可用 --browserUrl=http://127.0.0.1:<port> 直连这台 agent 浏览器，而不是另起一个 Chrome。"
+  },
+  "whitelist": {
+    "hosts": [],
+    "captureLocalStorage": true,
+    "note": "hosts 为空 = 只抓 cookie 不抓 localStorage；填入 host 后对应站点才会被 CDP 打开并读取 localStorage"
+  },
+  "agent": {
+    "silent": false,
+    "profileTtlMinutes": 60,
+    "extraChromeArgs": ["--no-proxy-server"],
+    "extensions": [],
+    "note": "silent = 静默模式（无头 + 不抢焦点 + 不进任务栏），默认关闭 = agent 干活时窗口可见，你能当场看到它点什么；要它悄悄跑就设 true（等价于旧版的默认）。extensions = 未打包扩展目录列表，用 CDP Extensions.loadUnpacked 装进 agent 浏览器（不是 --load-extension，那个在本机 Chrome 上已失效）；把 cookie-extension 的目录填进来，agent 浏览器自己也带 chrome.cookies 能力。extraChromeArgs 里的 --no-proxy-server 是必需的：本机系统代理（127.0.0.1:7890）对外的 TLS 会被直接断开，Chrome 默认跟随系统代理，于是所有外网请求以 ERR_CONNECTION_CLOSED 死在握手前；同一台机器直连是通的"
+  },
+  "writeback": {
+    "enabled": true,
+    "confirm": true,
+    "note": "回写只在 capture.enabled=true 时才有东西可写；capture 关闭时这一节直接被跳过"
+  },
+  "bridge": {
+    "enabled": true,
+    "port": 8791,
+    "note": "扩展桥：cookie-extension 装载后由 Chrome 自己解密并回传；port 被别的进程占用时自动转为客户端连接。受 capture.enabled 管辖：总开关关掉时这条也不会连"
+  },
+  "guard": {
+    "enabled": true,
+    "extraDenied": [],
+    "allow": [],
+    "note": "路径级禁区：支付/账号安全/实名认证/注销这四类默认全拦（规则见 src/guard.js 的 DEFAULT_DENIED）。extraDenied 追加规则，allow 精确放行；glob 里 * 吃任意字符（含 /）、? 吃一个字符，其余字符按字面量。host 限定用对象形 {host, path}"
+  }
+}

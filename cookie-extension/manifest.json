@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Agent Browser Identity Bridge",
+  "version": "0.1.0",
+  "description": "Local bridge that hands cookies for agent-requested domains to the Agent Browser runtime over 127.0.0.1, applies its additive write-back queue, opens/reads only the tabs this extension itself created, and manages extensions through chrome.management when asked. Never contacts any remote host.",
+  "permissions": ["cookies", "storage", "alarms", "scripting", "tabs", "management"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

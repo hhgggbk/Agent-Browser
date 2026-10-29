@@ -1,0 +1,35 @@
+{
+  "name": "agent-browser-runtime",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "description": "Agent browser runtime: optionally borrow the user's Chrome identity, drive an agent-owned browser (visible by default, silent opt-in), and write back only newly-acquired sessions",
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hhgggbk/Agent-Browser.git"
+  },
+  "scripts": {
+    "capture": "node src/capture.js",
+    "broker": "node src/broker.js",
+    "verify": "node test/verify.js",
+    "mcp:install": "node scripts/mcp-install.mjs",
+    "mcp:install:dry": "node scripts/mcp-install.mjs --dry-run"
+  },
+  "files": [
+    "src/",
+    "cookie-mcp/",
+    "!cookie-mcp/node_modules",
+    "cookie-extension/",
+    "config/",
+    "scripts/",
+    "README.md",
+    "功能介绍.md"
+  ],
+  "dependencies": {
+    "chrome-devtools-mcp": "1.11.0",
+    "playwright-core": "1.65.0-alpha-2026-10-14"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "chrome-cookie-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server: read-only access to the user's Chrome cookies, per-domain authorized",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "playwright-core": "1.65.0-alpha-2026-10-14"
+  }
+}
