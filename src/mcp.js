@@ -27,6 +27,15 @@ const CDM_BROWSER_URL = (process.env.AGENT_BROWSER_CDP_URL || "").trim();
 // at the directory you want screenshots/traces written to.
 const CDM_WORKSPACE = (process.env.AGENT_BROWSER_WORKSPACE || "").trim();
 
+async function cdpAnswers(base) {
+  try {
+    const r = await fetch(`${base.replace(/\/+$/, "")}/json/version`, { signal: AbortSignal.timeout(1500) });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
 const BACKENDS = {
   identity: {
     command: process.execPath,
@@ -36,16 +45,18 @@ const BACKENDS = {
   },
   devtools: {
     command: process.execPath,
-    args: [
-      path.join(ROOT, "node_modules", "chrome-devtools-mcp", "build", "src", "bin", "chrome-devtools-mcp.js"),
-      "--no-usage-statistics",
-      // Point this at a browser you already run (any Chromium started with
-      // --remote-debugging-port). Without it we launch our own profile.
-      ...(CDM_BROWSER_URL
-        ? [`--browserUrl=${CDM_BROWSER_URL}`]
-        : [`--userDataDir=${CDM_PROFILE}`]),
-      ...(CDM_WORKSPACE ? [`--workspace=${CDM_WORKSPACE}`] : []),
-    ],
+    // Resolved at start time: attach when the configured port actually answers,
+    // otherwise fall back to our own profile so a stale setting cannot break the
+    // whole back end.
+    resolveArgs: async () => {
+      const entry = path.join(ROOT, "node_modules", "chrome-devtools-mcp", "build", "src", "bin", "chrome-devtools-mcp.js");
+      const tail = CDM_WORKSPACE ? [`--workspace=${CDM_WORKSPACE}`] : [];
+      if (CDM_BROWSER_URL && (await cdpAnswers(CDM_BROWSER_URL))) {
+        return [entry, "--no-usage-statistics", `--browserUrl=${CDM_BROWSER_URL}`, ...tail];
+      }
+      if (CDM_BROWSER_URL) err(`no CDP at ${CDM_BROWSER_URL}; starting our own browser instead`);
+      return [entry, "--no-usage-statistics", `--userDataDir=${CDM_PROFILE}`, ...tail];
+    },
     cwd: path.join(ROOT, "node_modules", "chrome-devtools-mcp"),
     env: { CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS: "1" },
   },
@@ -72,13 +83,14 @@ const children = new Map();          // backend -> {proc, nextId, pending, tools
 const route = new Map();             // exposed tool name -> {backend, realName}
 const err = (...a) => process.stderr.write(`[agent-browser] ${a.join(" ")}\n`);
 
-function startBackend(key) {
+async function startBackend(key) {
   if (children.has(key)) return children.get(key);
   const spec = BACKENDS[key];
-  if (!fs.existsSync(spec.args[0])) {
-    throw new Error(`backend ${key}: missing ${spec.args[0]} (npm install first)`);
+  const args = spec.resolveArgs ? await spec.resolveArgs() : spec.args;
+  if (!fs.existsSync(args[0])) {
+    throw new Error(`backend ${key}: missing ${args[0]} (npm install first)`);
   }
-  const proc = spawn(spec.command, spec.args, {
+  const proc = spawn(spec.command, args, {
     cwd: spec.cwd,
     env: { ...process.env, ...(spec.env || {}) },
     stdio: ["pipe", "pipe", "pipe"],
@@ -132,7 +144,7 @@ function notifyBackend(child, method) {
 }
 
 async function handshake(key) {
-  const child = startBackend(key);
+  const child = await startBackend(key);
   await callBackend(child, "initialize", {
     protocolVersion: PROTOCOL,
     capabilities: { tools: {} },
