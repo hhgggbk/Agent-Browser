@@ -26,7 +26,9 @@
     "config/",
     "scripts/",
     "README.md",
-    "功能介绍.md"
+    "功能介绍.md",
+    "skills/",
+    "LICENSE"
   ],
   "dependencies": {
     "chrome-devtools-mcp": "1.11.0",
