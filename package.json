@@ -23,6 +23,7 @@
     "cookie-mcp/",
     "!cookie-mcp/node_modules",
     "cookie-extension/",
+    "!cookie-extension/bridge-config.json",
     "config/",
     "scripts/",
     "README.md",
