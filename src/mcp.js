@@ -21,6 +21,11 @@ const PKG = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"))
 // Published default keeps the DevTools profile inside the project; an existing
 // install can point at a profile it already has logins in.
 const CDM_PROFILE = process.env.AGENT_BROWSER_CDM_PROFILE || path.join(ROOT, ".profiles", "cdm");
+const CDM_BROWSER_URL = (process.env.AGENT_BROWSER_CDP_URL || "").trim();
+// Without MCP roots from the client, the devtools back end only writes inside the
+// OS temp dir and stalls waiting for a roots reply it will never get. Point this
+// at the directory you want screenshots/traces written to.
+const CDM_WORKSPACE = (process.env.AGENT_BROWSER_WORKSPACE || "").trim();
 
 const BACKENDS = {
   identity: {
@@ -34,7 +39,12 @@ const BACKENDS = {
     args: [
       path.join(ROOT, "node_modules", "chrome-devtools-mcp", "build", "src", "bin", "chrome-devtools-mcp.js"),
       "--no-usage-statistics",
-      `--userDataDir=${CDM_PROFILE}`,
+      // Point this at a browser you already run (any Chromium started with
+      // --remote-debugging-port). Without it we launch our own profile.
+      ...(CDM_BROWSER_URL
+        ? [`--browserUrl=${CDM_BROWSER_URL}`]
+        : [`--userDataDir=${CDM_PROFILE}`]),
+      ...(CDM_WORKSPACE ? [`--workspace=${CDM_WORKSPACE}`] : []),
     ],
     cwd: path.join(ROOT, "node_modules", "chrome-devtools-mcp"),
     env: { CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS: "1" },

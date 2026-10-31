@@ -1,6 +1,6 @@
 {
   "name": "agent-browser-runtime",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "type": "module",
   "description": "Agent browser runtime: optionally borrow the user's Chrome identity, drive an agent-owned browser (visible by default, silent opt-in), and write back only newly-acquired sessions",
