@@ -26,6 +26,10 @@ const CDM_BROWSER_URL = (process.env.AGENT_BROWSER_CDP_URL || "").trim();
 // OS temp dir and stalls waiting for a roots reply it will never get. Point this
 // at the directory you want screenshots/traces written to.
 const CDM_WORKSPACE = (process.env.AGENT_BROWSER_WORKSPACE || "").trim();
+// Chrome 136+ ignores --remote-debugging-port on the default profile. The only
+// door into a browser you already use is chrome://inspect/#remote-debugging,
+// which writes DevToolsActivePort into the profile; --autoConnect reads it.
+const CDM_USER_PROFILE = (process.env.AGENT_BROWSER_USER_PROFILE || "").trim();
 
 async function cdpAnswers(base) {
   try {
@@ -34,6 +38,10 @@ async function cdpAnswers(base) {
   } catch {
     return false;
   }
+}
+
+function userProfileReady(dir) {
+  return Boolean(dir) && fs.existsSync(path.join(dir, "DevToolsActivePort"));
 }
 
 const BACKENDS = {
@@ -54,7 +62,13 @@ const BACKENDS = {
       if (CDM_BROWSER_URL && (await cdpAnswers(CDM_BROWSER_URL))) {
         return [entry, "--no-usage-statistics", `--browserUrl=${CDM_BROWSER_URL}`, ...tail];
       }
+      // A browser the user already runs: chrome://inspect/#remote-debugging
+      // writes DevToolsActivePort; --autoConnect + --userDataDir consumes it.
+      if (userProfileReady(CDM_USER_PROFILE)) {
+        return [entry, "--no-usage-statistics", "--autoConnect", `--userDataDir=${CDM_USER_PROFILE}`, ...tail];
+      }
       if (CDM_BROWSER_URL) err(`no CDP at ${CDM_BROWSER_URL}; starting our own browser instead`);
+      if (CDM_USER_PROFILE) err(`no DevToolsActivePort in ${CDM_USER_PROFILE}; enable chrome://inspect/#remote-debugging`);
       return [entry, "--no-usage-statistics", `--userDataDir=${CDM_PROFILE}`, ...tail];
     },
     cwd: path.join(ROOT, "node_modules", "chrome-devtools-mcp"),
